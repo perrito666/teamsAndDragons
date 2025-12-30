@@ -27,7 +27,7 @@ const (
 type Person struct {
 	ID        string
 	Name      string
-	Notes     string    // Free-text notes about the person
+	Notes     string // Free-text notes about the person
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -50,15 +50,19 @@ func (p *Person) Slug() string {
 
 // Milestone represents a career progression step (e.g., "Senior 1 → Senior 2").
 type Milestone struct {
-	ID          string
-	PersonID    string
-	Number      int             // Sequential number: 1, 2, 3...
-	Name        string          // e.g., "Senior 1 → Senior 2"
-	Description string          // Overall description of the milestone
-	Status      MilestoneStatus // in_progress or completed
-	Objectives  []Objective
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID       string
+	PersonID string
+	// Number is a sequential representation of the order of the milestone
+	Number int
+	// Name is how we call this milestone, typically the role or transition to be achieved "Senior 1 → Senior 2"
+	Name string
+	// Description contains a free text explanation of the milestione
+	Description string
+	// Status represents were this milestone is in the "workflow" (ie. In progress, complete)
+	Status     MilestoneStatus
+	Objectives []Objective
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 // Validate checks if the Milestone has required fields.
@@ -244,6 +248,7 @@ func slugify(s string) string {
 	for strings.Contains(slug, "--") {
 		slug = strings.ReplaceAll(slug, "--", "-")
 	}
+	// remove trailing dashes
 	slug = strings.Trim(slug, "-")
 
 	return slug
@@ -254,4 +259,3 @@ func slugify(s string) string {
 func formatMilestoneFilename(number int, slug string) string {
 	return fmt.Sprintf("%02d-milestone-%s.md", number, slug)
 }
-

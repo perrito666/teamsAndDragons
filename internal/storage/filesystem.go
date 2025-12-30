@@ -141,7 +141,7 @@ func (fs *FileStorage) SavePerson(person *domain.Person) error {
 		return fmt.Errorf("writing profile: %w", err)
 	}
 
-	fs.logger.Info("saved person", "id", person.ID, "name", person.Name)
+	fs.logger.Debug("saved person", "id", person.ID, "name", person.Name)
 	return nil
 }
 
@@ -157,7 +157,7 @@ func (fs *FileStorage) DeletePerson(id string) error {
 		return fmt.Errorf("removing person directory: %w", err)
 	}
 
-	fs.logger.Info("deleted person", "id", id, "name", person.Name)
+	fs.logger.Debug("deleted person", "id", id, "name", person.Name)
 	return nil
 }
 
@@ -211,22 +211,16 @@ func (fs *FileStorage) ListMilestones(personID string) ([]domain.Milestone, erro
 }
 
 // GetMilestone retrieves a milestone by ID.
-func (fs *FileStorage) GetMilestone(id string) (*domain.Milestone, error) {
-	people, err := fs.ListPeople()
+func (fs *FileStorage) GetMilestone(personID, id string) (*domain.Milestone, error) {
+
+	milestones, err := fs.ListMilestones(personID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("listing milestones: %w", err)
 	}
 
-	for _, person := range people {
-		milestones, err := fs.ListMilestones(person.ID)
-		if err != nil {
-			continue
-		}
-
-		for _, m := range milestones {
-			if m.ID == id {
-				return &m, nil
-			}
+	for _, m := range milestones {
+		if m.ID == id {
+			return &m, nil
 		}
 	}
 
@@ -287,13 +281,13 @@ func (fs *FileStorage) SaveMilestone(milestone *domain.Milestone) error {
 		return fmt.Errorf("writing milestone: %w", err)
 	}
 
-	fs.logger.Info("saved milestone", "id", milestone.ID, "name", milestone.Name, "person", person.Name)
+	fs.logger.Debug("saved milestone", "id", milestone.ID, "name", milestone.Name, "person", person.Name)
 	return nil
 }
 
 // DeleteMilestone removes a milestone.
-func (fs *FileStorage) DeleteMilestone(id string) error {
-	milestone, err := fs.GetMilestone(id)
+func (fs *FileStorage) DeleteMilestone(personID, id string) error {
+	milestone, err := fs.GetMilestone(personID, id)
 	if err != nil {
 		return err
 	}
@@ -308,7 +302,7 @@ func (fs *FileStorage) DeleteMilestone(id string) error {
 		return fmt.Errorf("removing milestone file: %w", err)
 	}
 
-	fs.logger.Info("deleted milestone", "id", id, "name", milestone.Name)
+	fs.logger.Debug("deleted milestone", "id", id, "name", milestone.Name)
 	return nil
 }
 

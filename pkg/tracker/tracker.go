@@ -94,8 +94,8 @@ func (t *Tracker) ListMilestones(personID string) ([]Milestone, error) {
 }
 
 // GetMilestone retrieves a milestone by ID.
-func (t *Tracker) GetMilestone(id string) (*Milestone, error) {
-	return t.svc.GetMilestone(id)
+func (t *Tracker) GetMilestone(personID, id string) (*Milestone, error) {
+	return t.svc.GetMilestone(personID, id)
 }
 
 // CreateMilestone creates a new milestone for a person.
@@ -104,59 +104,59 @@ func (t *Tracker) CreateMilestone(personID, name, description string) (*Mileston
 }
 
 // UpdateMilestone updates an existing milestone.
-func (t *Tracker) UpdateMilestone(id, name, description string, status MilestoneStatus) (*Milestone, error) {
-	return t.svc.UpdateMilestone(id, name, description, status)
+func (t *Tracker) UpdateMilestone(personID, id, name, description string, status MilestoneStatus) (*Milestone, error) {
+	return t.svc.UpdateMilestone(personID, id, name, description, status)
 }
 
 // DeleteMilestone removes a milestone.
-func (t *Tracker) DeleteMilestone(id string) error {
-	return t.svc.DeleteMilestone(id)
+func (t *Tracker) DeleteMilestone(personID, id string) error {
+	return t.svc.DeleteMilestone(personID, id)
 }
 
 // --- Objective Operations ---
 
 // AddObjective adds an objective to a milestone.
-func (t *Tracker) AddObjective(milestoneID, name, description string) (*Milestone, error) {
-	return t.svc.AddObjective(milestoneID, name, description)
+func (t *Tracker) AddObjective(personID, milestoneID, name, description string) (*Milestone, error) {
+	return t.svc.AddObjective(personID, milestoneID, name, description)
 }
 
 // UpdateObjective updates an objective.
-func (t *Tracker) UpdateObjective(milestoneID, objectiveID, name, description string) (*Milestone, error) {
-	return t.svc.UpdateObjective(milestoneID, objectiveID, name, description)
+func (t *Tracker) UpdateObjective(personID, milestoneID, objectiveID, name, description string) (*Milestone, error) {
+	return t.svc.UpdateObjective(personID, milestoneID, objectiveID, name, description)
 }
 
 // DeleteObjective removes an objective.
-func (t *Tracker) DeleteObjective(milestoneID, objectiveID string) (*Milestone, error) {
-	return t.svc.DeleteObjective(milestoneID, objectiveID)
+func (t *Tracker) DeleteObjective(personID, milestoneID, objectiveID string) (*Milestone, error) {
+	return t.svc.DeleteObjective(personID, milestoneID, objectiveID)
 }
 
 // --- Action Operations ---
 
 // AddAction adds an action to an objective.
-func (t *Tracker) AddAction(milestoneID, objectiveID, description string, impact Impact, date time.Time, notes string) (*Milestone, error) {
-	return t.svc.AddAction(milestoneID, objectiveID, description, impact, date, notes)
+func (t *Tracker) AddAction(personID, milestoneID, objectiveID, description string, impact Impact, date time.Time, notes string) (*Milestone, error) {
+	return t.svc.AddAction(personID, milestoneID, objectiveID, description, impact, date, notes)
 }
 
 // UpdateAction updates an action.
-func (t *Tracker) UpdateAction(milestoneID, objectiveID, actionID, description string, impact Impact, date time.Time, notes string) (*Milestone, error) {
-	return t.svc.UpdateAction(milestoneID, objectiveID, actionID, description, impact, date, notes)
+func (t *Tracker) UpdateAction(personID, milestoneID, objectiveID, actionID, description string, impact Impact, date time.Time, notes string) (*Milestone, error) {
+	return t.svc.UpdateAction(personID, milestoneID, objectiveID, actionID, description, impact, date, notes)
 }
 
 // DeleteAction removes an action.
-func (t *Tracker) DeleteAction(milestoneID, objectiveID, actionID string) (*Milestone, error) {
-	return t.svc.DeleteAction(milestoneID, objectiveID, actionID)
+func (t *Tracker) DeleteAction(personID, milestoneID, objectiveID, actionID string) (*Milestone, error) {
+	return t.svc.DeleteAction(personID, milestoneID, objectiveID, actionID)
 }
 
 // --- Review Operations ---
 
 // SetObjectiveAchieved marks an objective as achieved or not achieved.
-func (t *Tracker) SetObjectiveAchieved(milestoneID, objectiveID string, achieved bool, reviewNotes string) (*Milestone, error) {
-	return t.svc.SetObjectiveAchieved(milestoneID, objectiveID, achieved, reviewNotes)
+func (t *Tracker) SetObjectiveAchieved(personID, milestoneID, objectiveID string, achieved bool, reviewNotes string) (*Milestone, error) {
+	return t.svc.SetObjectiveAchieved(personID, milestoneID, objectiveID, achieved, reviewNotes)
 }
 
 // GetObjectiveReview returns a review summary for an objective.
-func (t *Tracker) GetObjectiveReview(milestoneID, objectiveID string) (*ObjectiveReview, error) {
-	return t.svc.GetObjectiveReview(milestoneID, objectiveID)
+func (t *Tracker) GetObjectiveReview(personID, milestoneID, objectiveID string) (*ObjectiveReview, error) {
+	return t.svc.GetObjectiveReview(personID, milestoneID, objectiveID)
 }
 
 // --- Export Operations ---

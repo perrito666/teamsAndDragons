@@ -49,7 +49,7 @@ func (t *Tracker) CreatePerson(name, notes string) (*domain.Person, error) {
 		return nil, err
 	}
 
-	t.logger.Info("created person", "id", person.ID, "name", name)
+	t.logger.Debug("created person", "id", person.ID, "name", name)
 	return person, nil
 }
 
@@ -81,7 +81,7 @@ func (t *Tracker) UpdatePerson(id, name, notes string) (*domain.Person, error) {
 		return nil, err
 	}
 
-	t.logger.Info("updated person", "id", id, "name", name)
+	t.logger.Debug("updated person", "id", id, "name", name)
 	return person, nil
 }
 
@@ -96,8 +96,8 @@ func (t *Tracker) ListMilestones(personID string) ([]domain.Milestone, error) {
 }
 
 // GetMilestone retrieves a milestone by ID.
-func (t *Tracker) GetMilestone(id string) (*domain.Milestone, error) {
-	return t.storage.GetMilestone(id)
+func (t *Tracker) GetMilestone(personID, id string) (*domain.Milestone, error) {
+	return t.storage.GetMilestone(personID, id)
 }
 
 // CreateMilestone creates a new milestone.
@@ -130,13 +130,13 @@ func (t *Tracker) CreateMilestone(personID, name, description string) (*domain.M
 		return nil, err
 	}
 
-	t.logger.Info("created milestone", "id", milestone.ID, "name", name, "number", number)
+	t.logger.Debug("created milestone", "id", milestone.ID, "name", name, "number", number)
 	return milestone, nil
 }
 
 // UpdateMilestone updates an existing milestone.
-func (t *Tracker) UpdateMilestone(id string, name, description string, status domain.MilestoneStatus) (*domain.Milestone, error) {
-	milestone, err := t.storage.GetMilestone(id)
+func (t *Tracker) UpdateMilestone(personID, id string, name, description string, status domain.MilestoneStatus) (*domain.Milestone, error) {
+	milestone, err := t.storage.GetMilestone(personID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -149,18 +149,18 @@ func (t *Tracker) UpdateMilestone(id string, name, description string, status do
 		return nil, err
 	}
 
-	t.logger.Info("updated milestone", "id", id, "name", name)
+	t.logger.Debug("updated milestone", "id", id, "name", name)
 	return milestone, nil
 }
 
 // DeleteMilestone removes a milestone.
-func (t *Tracker) DeleteMilestone(id string) error {
-	return t.storage.DeleteMilestone(id)
+func (t *Tracker) DeleteMilestone(personID, id string) error {
+	return t.storage.DeleteMilestone(personID, id)
 }
 
 // AddObjective adds an objective to a milestone.
-func (t *Tracker) AddObjective(milestoneID, name, description string) (*domain.Milestone, error) {
-	milestone, err := t.storage.GetMilestone(milestoneID)
+func (t *Tracker) AddObjective(personID, milestoneID, name, description string) (*domain.Milestone, error) {
+	milestone, err := t.storage.GetMilestone(personID, milestoneID)
 	if err != nil {
 		return nil, err
 	}
@@ -177,13 +177,13 @@ func (t *Tracker) AddObjective(milestoneID, name, description string) (*domain.M
 		return nil, err
 	}
 
-	t.logger.Info("added objective", "milestone_id", milestoneID, "name", name)
+	t.logger.Debug("added objective", "milestone_id", milestoneID, "name", name)
 	return milestone, nil
 }
 
 // UpdateObjective updates an objective.
-func (t *Tracker) UpdateObjective(milestoneID, objectiveID, name, description string) (*domain.Milestone, error) {
-	milestone, err := t.storage.GetMilestone(milestoneID)
+func (t *Tracker) UpdateObjective(personID, milestoneID, objectiveID, name, description string) (*domain.Milestone, error) {
+	milestone, err := t.storage.GetMilestone(personID, milestoneID)
 	if err != nil {
 		return nil, err
 	}
@@ -206,13 +206,13 @@ func (t *Tracker) UpdateObjective(milestoneID, objectiveID, name, description st
 		return nil, err
 	}
 
-	t.logger.Info("updated objective", "milestone_id", milestoneID, "objective_id", objectiveID)
+	t.logger.Debug("updated objective", "milestone_id", milestoneID, "objective_id", objectiveID)
 	return milestone, nil
 }
 
 // DeleteObjective removes an objective.
-func (t *Tracker) DeleteObjective(milestoneID, objectiveID string) (*domain.Milestone, error) {
-	milestone, err := t.storage.GetMilestone(milestoneID)
+func (t *Tracker) DeleteObjective(personID, milestoneID, objectiveID string) (*domain.Milestone, error) {
+	milestone, err := t.storage.GetMilestone(personID, milestoneID)
 	if err != nil {
 		return nil, err
 	}
@@ -237,13 +237,13 @@ func (t *Tracker) DeleteObjective(milestoneID, objectiveID string) (*domain.Mile
 		return nil, err
 	}
 
-	t.logger.Info("deleted objective", "milestone_id", milestoneID, "objective_id", objectiveID)
+	t.logger.Debug("deleted objective", "milestone_id", milestoneID, "objective_id", objectiveID)
 	return milestone, nil
 }
 
 // AddAction adds an action to an objective.
-func (t *Tracker) AddAction(milestoneID, objectiveID, description string, impact domain.Impact, date time.Time, notes string) (*domain.Milestone, error) {
-	milestone, err := t.storage.GetMilestone(milestoneID)
+func (t *Tracker) AddAction(personID, milestoneID, objectiveID, description string, impact domain.Impact, date time.Time, notes string) (*domain.Milestone, error) {
+	milestone, err := t.storage.GetMilestone(personID, milestoneID)
 	if err != nil {
 		return nil, err
 	}
@@ -272,13 +272,13 @@ func (t *Tracker) AddAction(milestoneID, objectiveID, description string, impact
 		return nil, err
 	}
 
-	t.logger.Info("added action", "milestone_id", milestoneID, "objective_id", objectiveID, "impact", impact)
+	t.logger.Debug("added action", "milestone_id", milestoneID, "objective_id", objectiveID, "impact", impact)
 	return milestone, nil
 }
 
 // UpdateAction updates an action.
-func (t *Tracker) UpdateAction(milestoneID, objectiveID, actionID, description string, impact domain.Impact, date time.Time, notes string) (*domain.Milestone, error) {
-	milestone, err := t.storage.GetMilestone(milestoneID)
+func (t *Tracker) UpdateAction(personID, milestoneID, objectiveID, actionID, description string, impact domain.Impact, date time.Time, notes string) (*domain.Milestone, error) {
+	milestone, err := t.storage.GetMilestone(personID, milestoneID)
 	if err != nil {
 		return nil, err
 	}
@@ -308,13 +308,13 @@ func (t *Tracker) UpdateAction(milestoneID, objectiveID, actionID, description s
 		return nil, err
 	}
 
-	t.logger.Info("updated action", "milestone_id", milestoneID, "action_id", actionID)
+	t.logger.Debug("updated action", "milestone_id", milestoneID, "action_id", actionID)
 	return milestone, nil
 }
 
 // DeleteAction removes an action.
-func (t *Tracker) DeleteAction(milestoneID, objectiveID, actionID string) (*domain.Milestone, error) {
-	milestone, err := t.storage.GetMilestone(milestoneID)
+func (t *Tracker) DeleteAction(personID, milestoneID, objectiveID, actionID string) (*domain.Milestone, error) {
+	milestone, err := t.storage.GetMilestone(personID, milestoneID)
 	if err != nil {
 		return nil, err
 	}
@@ -343,13 +343,13 @@ func (t *Tracker) DeleteAction(milestoneID, objectiveID, actionID string) (*doma
 		return nil, err
 	}
 
-	t.logger.Info("deleted action", "milestone_id", milestoneID, "action_id", actionID)
+	t.logger.Debug("deleted action", "milestone_id", milestoneID, "action_id", actionID)
 	return milestone, nil
 }
 
 // SetObjectiveAchieved marks an objective as achieved or not achieved.
-func (t *Tracker) SetObjectiveAchieved(milestoneID, objectiveID string, achieved bool, reviewNotes string) (*domain.Milestone, error) {
-	milestone, err := t.storage.GetMilestone(milestoneID)
+func (t *Tracker) SetObjectiveAchieved(personID, milestoneID, objectiveID string, achieved bool, reviewNotes string) (*domain.Milestone, error) {
+	milestone, err := t.storage.GetMilestone(personID, milestoneID)
 	if err != nil {
 		return nil, err
 	}
@@ -374,13 +374,13 @@ func (t *Tracker) SetObjectiveAchieved(milestoneID, objectiveID string, achieved
 		return nil, err
 	}
 
-	t.logger.Info("set objective achieved", "milestone_id", milestoneID, "objective_id", objectiveID, "achieved", achieved)
+	t.logger.Debug("set objective achieved", "milestone_id", milestoneID, "objective_id", objectiveID, "achieved", achieved)
 	return milestone, nil
 }
 
 // GetObjectiveReview returns a review summary for an objective.
-func (t *Tracker) GetObjectiveReview(milestoneID, objectiveID string) (*ObjectiveReview, error) {
-	milestone, err := t.storage.GetMilestone(milestoneID)
+func (t *Tracker) GetObjectiveReview(personID, milestoneID, objectiveID string) (*ObjectiveReview, error) {
+	milestone, err := t.storage.GetMilestone(personID, milestoneID)
 	if err != nil {
 		return nil, err
 	}

@@ -35,13 +35,13 @@ type MilestoneStorage interface {
 	ListMilestones(personID string) ([]domain.Milestone, error)
 
 	// GetMilestone retrieves a milestone by ID.
-	GetMilestone(id string) (*domain.Milestone, error)
+	GetMilestone(personID, id string) (*domain.Milestone, error)
 
 	// SaveMilestone creates or updates a milestone.
 	SaveMilestone(milestone *domain.Milestone) error
 
 	// DeleteMilestone removes a milestone.
-	DeleteMilestone(id string) error
+	DeleteMilestone(personID, id string) error
 }
 
 // ExportOptions configures HTML export behavior.

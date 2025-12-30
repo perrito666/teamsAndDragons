@@ -40,7 +40,7 @@ func ParseProfile(content []byte) (*domain.Person, error) {
 
 	var fm ProfileFrontmatter
 	if err := yaml.Unmarshal(frontmatter, &fm); err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrInvalidFrontmatter, err)
+		return nil, fmt.Errorf("%w: %v", domain.ErrInvalidFrontMatter, err)
 	}
 
 	// Body is the free-text notes (skip the first heading line)
@@ -95,7 +95,7 @@ func ParseMilestone(content []byte, personID string) (*domain.Milestone, error) 
 
 	var fm MilestoneFrontmatter
 	if err := yaml.Unmarshal(frontmatter, &fm); err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrInvalidFrontmatter, err)
+		return nil, fmt.Errorf("%w: %v", domain.ErrInvalidFrontMatter, err)
 	}
 
 	description, objectives := parseObjectivesFromBody(body)
@@ -214,14 +214,14 @@ func splitFrontmatter(content []byte) (frontmatter, body []byte, err error) {
 	text := string(content)
 
 	if !strings.HasPrefix(text, "---\n") {
-		return nil, nil, domain.ErrInvalidFrontmatter
+		return nil, nil, domain.ErrInvalidFrontMatter
 	}
 
 	// Find closing ---
 	rest := text[4:] // Skip opening ---\n
 	endIdx := strings.Index(rest, "\n---")
 	if endIdx == -1 {
-		return nil, nil, domain.ErrInvalidFrontmatter
+		return nil, nil, domain.ErrInvalidFrontMatter
 	}
 
 	frontmatter = []byte(rest[:endIdx])

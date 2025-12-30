@@ -258,15 +258,15 @@ func main() {
     milestone, _ := t.CreateMilestone(person.ID, "Senior 1 → Senior 2", "Growth goals")
 
     // Add an objective
-    milestone, _ = t.AddObjective(milestone.ID, "Technical leadership", "Lead projects")
+    milestone, _ = t.AddObjective(person.ID, milestone.ID, "Technical leadership", "Lead projects")
 
     // Add actions
     objID := milestone.Objectives[0].ID
-    t.AddAction(milestone.ID, objID, "Led architecture review",
+    t.AddAction(person.ID, milestone.ID, objID, "Led architecture review",
         tracker.ImpactPositive, time.Now(), "Great outcome")
 
     // Mark objective as achieved
-    t.SetObjectiveAchieved(milestone.ID, objID, true, "Consistently demonstrated")
+    t.SetObjectiveAchieved(person.ID, milestone.ID, objID, true, "Consistently demonstrated")
 
     // Export to HTML
     t.ExportPerson(person.ID, "john-report.html")

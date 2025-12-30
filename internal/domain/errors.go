@@ -14,12 +14,12 @@ var (
 
 // Storage errors.
 var (
-	ErrPersonNotFound    = errors.New("person not found")
-	ErrMilestoneNotFound = errors.New("milestone not found")
-	ErrObjectiveNotFound = errors.New("objective not found")
-	ErrActionNotFound    = errors.New("action not found")
-	ErrInvalidMarkdown   = errors.New("invalid markdown format")
-	ErrInvalidFrontmatter = errors.New("invalid YAML frontmatter")
+	ErrPersonNotFound     = errors.New("person not found")
+	ErrMilestoneNotFound  = errors.New("milestone not found")
+	ErrObjectiveNotFound  = errors.New("objective not found")
+	ErrActionNotFound     = errors.New("action not found")
+	ErrInvalidMarkdown    = errors.New("invalid markdown format")
+	ErrInvalidFrontMatter = errors.New("invalid YAML frontmatter")
 )
 
 // Operation errors.

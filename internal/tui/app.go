@@ -110,6 +110,7 @@ type keyMap struct {
 	Save     key.Binding
 	Cancel   key.Binding
 	Export   key.Binding
+	Refresh  key.Binding
 	Help     key.Binding
 }
 
@@ -173,6 +174,10 @@ var keys = keyMap{
 	Export: key.NewBinding(
 		key.WithKeys("x"),
 		key.WithHelp("x", "export HTML"),
+	),
+	Refresh: key.NewBinding(
+		key.WithKeys("ctrl+r"),
+		key.WithHelp("ctrl+r", "refresh"),
 	),
 	Help: key.NewBinding(
 		key.WithKeys("?"),
@@ -309,6 +314,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case milestonesLoadedMsg:
 		m.milestones = msg.milestones
 		m.updateMilestoneList()
+		// Also update selected milestone/objective if we have them (for refresh after delete)
+		if m.selectedMilestone != nil {
+			for i := range m.milestones {
+				if m.milestones[i].ID == m.selectedMilestone.ID {
+					m.selectedMilestone = &m.milestones[i]
+					m.updateObjectiveList()
+					// Also update selected objective if we have one
+					if m.selectedObjective != nil {
+						for j := range m.selectedMilestone.Objectives {
+							if m.selectedMilestone.Objectives[j].ID == m.selectedObjective.ID {
+								m.selectedObjective = &m.selectedMilestone.Objectives[j]
+								m.updateActionList()
+								break
+							}
+						}
+					}
+					break
+				}
+			}
+		}
 		return m, nil
 
 	case personSavedMsg:
@@ -473,6 +498,8 @@ func (m *Model) handlePeopleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, nil
+	case key.Matches(msg, keys.Refresh):
+		return m, m.loadPeople()
 	}
 	// Pass navigation keys to list
 	var cmd tea.Cmd
@@ -488,7 +515,7 @@ func (m *Model) handlePersonProfileKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case key.Matches(msg, keys.Enter):
 		if item, ok := m.milestoneList.SelectedItem().(listItem); ok {
-			milestone, _ := m.service.GetMilestone(item.id)
+			milestone, _ := m.service.GetMilestone(m.selectedPerson.ID, item.id)
 			if milestone != nil {
 				m.selectedMilestone = milestone
 				m.view = ViewMilestoneDetail
@@ -513,12 +540,31 @@ func (m *Model) handlePersonProfileKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case key.Matches(msg, keys.Delete):
 		if item, ok := m.milestoneList.SelectedItem().(listItem); ok {
-			milestone, _ := m.service.GetMilestone(item.id)
+			milestone, _ := m.service.GetMilestone(m.selectedPerson.ID, item.id)
 			if milestone != nil {
 				m.selectedMilestone = milestone
 				m.prevView = m.view
 				m.view = ViewConfirmDelete
 				m.deleteType = "milestone"
+			}
+		}
+		return m, nil
+	case key.Matches(msg, keys.Toggle):
+		if item, ok := m.milestoneList.SelectedItem().(listItem); ok {
+			milestone, _ := m.service.GetMilestone(m.selectedPerson.ID, item.id)
+			if milestone != nil {
+				newStatus := domain.MilestoneCompleted
+				if milestone.Status == domain.MilestoneCompleted {
+					newStatus = domain.MilestoneInProgress
+				}
+				return m, func() tea.Msg {
+					updated, err := m.service.UpdateMilestone(
+						m.selectedPerson.ID, milestone.ID, milestone.Name, milestone.Description, newStatus)
+					if err != nil {
+						return errMsg{err}
+					}
+					return milestoneSavedMsg{updated}
+				}
 			}
 		}
 		return m, nil
@@ -532,6 +578,11 @@ func (m *Model) handlePersonProfileKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				}
 				return exportedMsg{path}
 			}
+		}
+		return m, nil
+	case key.Matches(msg, keys.Refresh):
+		if m.selectedPerson != nil {
+			return m, m.loadMilestones(m.selectedPerson.ID)
 		}
 		return m, nil
 	}
@@ -587,7 +638,7 @@ func (m *Model) handleMilestoneDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				if m.selectedMilestone.Objectives[i].ID == item.id {
 					obj := &m.selectedMilestone.Objectives[i]
 					return m, func() tea.Msg {
-						milestone, err := m.service.SetObjectiveAchieved(
+						milestone, err := m.service.SetObjectiveAchieved(m.selectedPerson.ID,
 							m.selectedMilestone.ID, obj.ID, !obj.Achieved, "")
 						if err != nil {
 							return errMsg{err}
@@ -609,6 +660,11 @@ func (m *Model) handleMilestoneDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					break
 				}
 			}
+		}
+		return m, nil
+	case key.Matches(msg, keys.Refresh):
+		if m.selectedPerson != nil {
+			return m, m.loadMilestones(m.selectedPerson.ID)
 		}
 		return m, nil
 	}
@@ -656,7 +712,7 @@ func (m *Model) handleObjectiveReviewKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case key.Matches(msg, keys.Toggle):
 		return m, func() tea.Msg {
-			milestone, err := m.service.SetObjectiveAchieved(
+			milestone, err := m.service.SetObjectiveAchieved(m.selectedPerson.ID,
 				m.selectedMilestone.ID, m.selectedObjective.ID,
 				!m.selectedObjective.Achieved, "")
 			if err != nil {
@@ -675,6 +731,11 @@ func (m *Model) handleObjectiveReviewKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					break
 				}
 			}
+		}
+		return m, nil
+	case key.Matches(msg, keys.Refresh):
+		if m.selectedPerson != nil {
+			return m, m.loadMilestones(m.selectedPerson.ID)
 		}
 		return m, nil
 	}
@@ -697,9 +758,9 @@ func (m *Model) handlePersonFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.focusIndex = (m.focusIndex + 1) % 2
 		m.updateFormFocus()
 		return m, nil
-	case key.Matches(msg, keys.Save), msg.String() == "ctrl+s", msg.String() == "S":
+	case key.Matches(msg, keys.Save), msg.String() == "ctrl+s", msg.String() == "ctrl+S":
 		// Capital S means save and go back
-		if msg.String() == "S" {
+		if msg.String() == "ctrl+S" {
 			m.goBackAfterSave = true
 		}
 		name := strings.TrimSpace(m.nameInput.Value())
@@ -740,9 +801,9 @@ func (m *Model) handleMilestoneFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.focusIndex = (m.focusIndex + 1) % 2
 		m.updateFormFocus()
 		return m, nil
-	case key.Matches(msg, keys.Save), msg.String() == "ctrl+s", msg.String() == "S":
+	case key.Matches(msg, keys.Save), msg.String() == "ctrl+s", msg.String() == "ctrl+S":
 		// Capital S means save and go back
-		if msg.String() == "S" {
+		if msg.String() == "ctrl+S" {
 			m.goBackAfterSave = true
 		}
 		name := strings.TrimSpace(m.nameInput.Value())
@@ -763,7 +824,7 @@ func (m *Model) handleMilestoneFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, func() tea.Msg {
-			milestone, err := m.service.UpdateMilestone(
+			milestone, err := m.service.UpdateMilestone(m.selectedPerson.ID,
 				m.selectedMilestone.ID, name, desc, m.selectedMilestone.Status)
 			if err != nil {
 				return errMsg{err}
@@ -784,9 +845,9 @@ func (m *Model) handleObjectiveFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.focusIndex = (m.focusIndex + 1) % 2
 		m.updateFormFocus()
 		return m, nil
-	case key.Matches(msg, keys.Save), msg.String() == "ctrl+s", msg.String() == "S":
+	case key.Matches(msg, keys.Save), msg.String() == "ctrl+s", msg.String() == "ctrl+S":
 		// Capital S means save and go back
-		if msg.String() == "S" {
+		if msg.String() == "ctrl+S" {
 			m.goBackAfterSave = true
 		}
 		name := strings.TrimSpace(m.nameInput.Value())
@@ -799,7 +860,7 @@ func (m *Model) handleObjectiveFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.formMode == "add" {
 			m.goBackAfterSave = true // Always go back after add
 			return m, func() tea.Msg {
-				milestone, err := m.service.AddObjective(m.selectedMilestone.ID, name, desc)
+				milestone, err := m.service.AddObjective(m.selectedPerson.ID, m.selectedMilestone.ID, name, desc)
 				if err != nil {
 					return errMsg{err}
 				}
@@ -807,7 +868,7 @@ func (m *Model) handleObjectiveFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, func() tea.Msg {
-			milestone, err := m.service.UpdateObjective(
+			milestone, err := m.service.UpdateObjective(m.selectedPerson.ID,
 				m.selectedMilestone.ID, m.selectedObjective.ID, name, desc)
 			if err != nil {
 				return errMsg{err}
@@ -842,9 +903,9 @@ func (m *Model) handleActionFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case msg.String() == "down" && m.focusIndex == 1: // Date field: down arrow subtracts one day
 		m.adjustDate(-1)
 		return m, nil
-	case key.Matches(msg, keys.Save), msg.String() == "ctrl+s", msg.String() == "S":
+	case key.Matches(msg, keys.Save), msg.String() == "ctrl+s", msg.String() == "ctrl+S":
 		// Capital S means save and go back
-		if msg.String() == "S" {
+		if msg.String() == "ctrl+S" {
 			m.goBackAfterSave = true
 		}
 		desc := strings.TrimSpace(m.descriptionInput.Value())
@@ -869,7 +930,7 @@ func (m *Model) handleActionFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.formMode == "add" {
 			m.goBackAfterSave = true // Always go back after add
 			return m, func() tea.Msg {
-				milestone, err := m.service.AddAction(
+				milestone, err := m.service.AddAction(m.selectedPerson.ID,
 					m.selectedMilestone.ID, m.selectedObjective.ID,
 					desc, impact, date, notes)
 				if err != nil {
@@ -879,7 +940,7 @@ func (m *Model) handleActionFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, func() tea.Msg {
-			milestone, err := m.service.UpdateAction(
+			milestone, err := m.service.UpdateAction(m.selectedPerson.ID,
 				m.selectedMilestone.ID, m.selectedObjective.ID, m.selectedAction.ID,
 				desc, impact, date, notes)
 			if err != nil {
@@ -906,7 +967,7 @@ func (m *Model) handleDeleteConfirmKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		case "milestone":
 			return m, func() tea.Msg {
-				err := m.service.DeleteMilestone(m.selectedMilestone.ID)
+				err := m.service.DeleteMilestone(m.selectedPerson.ID, m.selectedMilestone.ID)
 				if err != nil {
 					return errMsg{err}
 				}
@@ -914,7 +975,7 @@ func (m *Model) handleDeleteConfirmKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		case "objective":
 			return m, func() tea.Msg {
-				_, err := m.service.DeleteObjective(m.selectedMilestone.ID, m.selectedObjective.ID)
+				_, err := m.service.DeleteObjective(m.selectedPerson.ID, m.selectedMilestone.ID, m.selectedObjective.ID)
 				if err != nil {
 					return errMsg{err}
 				}
@@ -922,7 +983,7 @@ func (m *Model) handleDeleteConfirmKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		case "action":
 			return m, func() tea.Msg {
-				_, err := m.service.DeleteAction(
+				_, err := m.service.DeleteAction(m.selectedPerson.ID,
 					m.selectedMilestone.ID, m.selectedObjective.ID, m.selectedAction.ID)
 				if err != nil {
 					return errMsg{err}
@@ -1426,13 +1487,13 @@ func (m Model) renderHelp() string {
 
 	switch m.view {
 	case ViewPeopleList:
-		help = "↑/↓ navigate • enter select • a add • e edit • d delete • q quit"
+		help = "↑/↓ navigate • enter select • a add • e edit • d delete • ctrl+r refresh • q quit"
 	case ViewPersonProfile:
-		help = "↑/↓ navigate • enter view milestone • a add • e edit person • d delete • x export • esc back"
+		help = "↑/↓ navigate • enter view • a add • e edit • t toggle status • d delete • x export • ctrl+r refresh • esc back"
 	case ViewMilestoneDetail:
-		help = "↑/↓ navigate • enter/r review • a add • e edit • t toggle achieved • d delete • esc back"
+		help = "↑/↓ navigate • enter/r review • a add • e edit • t toggle • d delete • ctrl+r refresh • esc back"
 	case ViewObjectiveReview:
-		help = "↑/↓ navigate • a add action • e edit • t toggle achieved • d delete • esc back"
+		help = "↑/↓ navigate • a add • e edit • t toggle • d delete • ctrl+r refresh • esc back"
 	case ViewAddPerson, ViewEditPerson, ViewAddMilestone, ViewEditMilestone,
 		ViewAddObjective, ViewEditObjective:
 		help = "tab next field • ctrl+s save • S save & back • esc cancel"
