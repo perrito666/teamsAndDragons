@@ -1,3 +1,4 @@
+# yaml
 name: Release
 
 on:
@@ -61,19 +62,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: release
+      - name: List workspace (optional)
+        run: ls -lah
 
-      - name: List release files
-        run: ls -lah release
-
-      - name: Create Release and upload assets
+      - name: Create Release and attach workflow artifacts
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
-          files: release/*
           name: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: false
+          artifacts: |
+            tracker-linux-amd64
+            tracker-linux-arm64
+            tracker-darwin-amd64
+            tracker-darwin-arm64
