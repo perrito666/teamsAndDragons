@@ -1,0 +1,34 @@
+# Prompts made to Claude for the Career Progression Tracker project
+
+## Initial Request
+Build a Go application for tracking software engineer career progression with:
+- Data model: Person, Milestones, Objectives, Actions (with positive/negative impact)
+- Markdown-based storage with YAML frontmatter
+- Manual tally/review system for objectives
+- Clean architecture with core library + TUI (bubbletea/lipgloss)
+- Support for future GUI frontend
+- HTML export capability
+- Comprehensive tests
+
+## Clarifications
+- Chose "Markdown parsing" for data storage (most human-readable)
+- Chose "Optional notes" when marking objectives achieved
+
+## Feature Requests
+please add a Readme explaining both the code structure and usage
+
+Add a text file with a prompt for another claude instance to build the GUI for this
+
+## Bug Reports and Fixes
+
+When i run the TUI, the 'add' option for a person has non editable fields
+
+controls for navigation in listing menus do not work (milestones, objectives, actions). Lists do not update after edition until user gets out and in again. Date fields should have a shortcut with leter n to fill with current date and support forward and backward arrows to change date in the future and past one day at a time. Text input fields are too small, they should fill as much screen as possible.
+
+ctrl s on actions saves copies each time instead of overrwiting the one i am working on. ctrl s should save and capital S should save and go back. Delete confirmation screen works the first time and not the second. Delete should go back to the previous listing after deletion
+
+The actions do not refresh after delete. I woluld also like to be able to use ctrl+r for a forced refresh of the current screen.
+
+Milestones are always in progress, cannot be toggled
+
+I need to dump all the prompts I made to claude for this project in prompt.txt, do not change anything else.
