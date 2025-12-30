@@ -186,7 +186,7 @@ var keys = keyMap{
 }
 
 // NewModel creates a new TUI model.
-func NewModel(svc service.TrackerService) Model {
+func NewModel(svc service.TrackerService) *Model {
 	styles := DefaultStyles()
 
 	// Initialize text inputs
@@ -226,7 +226,7 @@ func NewModel(svc service.TrackerService) Model {
 	actionList.SetShowHelp(false)
 	actionList.SetFilteringEnabled(false)
 
-	return Model{
+	return &Model{
 		service:          svc,
 		styles:           styles,
 		view:             ViewPeopleList,
@@ -242,12 +242,12 @@ func NewModel(svc service.TrackerService) Model {
 }
 
 // Init initializes the model.
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return m.loadPeople()
 }
 
 // loadPeople returns a command to load people.
-func (m Model) loadPeople() tea.Cmd {
+func (m *Model) loadPeople() tea.Cmd {
 	return func() tea.Msg {
 		people, err := m.service.ListPeople()
 		if err != nil {
@@ -258,7 +258,7 @@ func (m Model) loadPeople() tea.Cmd {
 }
 
 // loadMilestones returns a command to load milestones.
-func (m Model) loadMilestones(personID string) tea.Cmd {
+func (m *Model) loadMilestones(personID string) tea.Cmd {
 	return func() tea.Msg {
 		milestones, err := m.service.ListMilestones(personID)
 		if err != nil {
@@ -278,7 +278,7 @@ type deletedMsg struct{}
 type exportedMsg struct{ path string }
 
 // Update handles messages.
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
@@ -309,6 +309,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case peopleLoadedMsg:
 		m.people = msg.people
 		m.updatePeopleList()
+
+		if m.selectedPerson != nil {
+			return m, m.loadMilestones(m.selectedPerson.ID)
+		}
 		return m, nil
 
 	case milestonesLoadedMsg:
@@ -777,6 +781,7 @@ func (m *Model) handlePersonFormKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					return errMsg{err}
 				}
+				m.selectedPerson = person
 				return personSavedMsg{person}
 			}
 		}
@@ -1139,7 +1144,7 @@ func (m *Model) updateActionList() {
 }
 
 // View renders the UI.
-func (m Model) View() string {
+func (m *Model) View() string {
 	var s strings.Builder
 
 	// Header with breadcrumb
@@ -1181,7 +1186,7 @@ func (m Model) View() string {
 	return m.styles.App.Render(s.String())
 }
 
-func (m Model) renderBreadcrumb() string {
+func (m *Model) renderBreadcrumb() string {
 	parts := []string{"Career Tracker"}
 
 	if m.selectedPerson != nil {
@@ -1202,14 +1207,14 @@ func (m Model) renderBreadcrumb() string {
 	return m.styles.Title.Render(strings.Join(styled, m.styles.BreadcrumbSep.String()))
 }
 
-func (m Model) renderPeopleList() string {
+func (m *Model) renderPeopleList() string {
 	if len(m.people) == 0 {
 		return m.styles.Muted.Render("No people tracked yet. Press 'a' to add someone.")
 	}
 	return m.peopleList.View()
 }
 
-func (m Model) renderPersonProfile() string {
+func (m *Model) renderPersonProfile() string {
 	if m.selectedPerson == nil {
 		return ""
 	}
@@ -1238,7 +1243,7 @@ func (m Model) renderPersonProfile() string {
 	return s.String()
 }
 
-func (m Model) renderMilestoneDetail() string {
+func (m *Model) renderMilestoneDetail() string {
 	if m.selectedMilestone == nil {
 		return ""
 	}
@@ -1279,7 +1284,7 @@ func (m Model) renderMilestoneDetail() string {
 	return s.String()
 }
 
-func (m Model) renderObjectiveReview() string {
+func (m *Model) renderObjectiveReview() string {
 	if m.selectedObjective == nil {
 		return ""
 	}
@@ -1340,7 +1345,7 @@ func (m Model) renderObjectiveReview() string {
 	return s.String()
 }
 
-func (m Model) renderPersonForm() string {
+func (m *Model) renderPersonForm() string {
 	title := "Add Person"
 	if m.formMode == "edit" {
 		title = "Edit Person"
@@ -1362,7 +1367,7 @@ func (m Model) renderPersonForm() string {
 	return s.String()
 }
 
-func (m Model) renderMilestoneForm() string {
+func (m *Model) renderMilestoneForm() string {
 	title := "Add Milestone"
 	if m.formMode == "edit" {
 		title = "Edit Milestone"
@@ -1384,7 +1389,7 @@ func (m Model) renderMilestoneForm() string {
 	return s.String()
 }
 
-func (m Model) renderObjectiveForm() string {
+func (m *Model) renderObjectiveForm() string {
 	title := "Add Objective"
 	if m.formMode == "edit" {
 		title = "Edit Objective"
@@ -1406,7 +1411,7 @@ func (m Model) renderObjectiveForm() string {
 	return s.String()
 }
 
-func (m Model) renderActionForm() string {
+func (m *Model) renderActionForm() string {
 	title := "Add Action"
 	if m.formMode == "edit" {
 		title = "Edit Action"
@@ -1451,7 +1456,7 @@ func (m Model) renderActionForm() string {
 	return s.String()
 }
 
-func (m Model) renderDeleteConfirm() string {
+func (m *Model) renderDeleteConfirm() string {
 	var s strings.Builder
 
 	s.WriteString(m.styles.Error.Render("Confirm Delete"))
@@ -1482,7 +1487,7 @@ func (m Model) renderDeleteConfirm() string {
 	return s.String()
 }
 
-func (m Model) renderHelp() string {
+func (m *Model) renderHelp() string {
 	var help string
 
 	switch m.view {
